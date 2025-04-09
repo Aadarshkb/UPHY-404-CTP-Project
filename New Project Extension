@@ -1,0 +1,52 @@
+**This code records audio from a microphone, analyzes it using the Fast Fourier Transform (FFT), and detects the dominant frequency (pitch) of the sound, then displays its spectrum.**
+
+import numpy as np
+import sounddevice as sd
+import scipy.fftpack as fft
+import matplotlib.pyplot as plt
+
+# Parameters
+fs = 44100  
+duration = 3
+threshold = 0.01  # Minimum signal level to detect voice
+
+def record_audio(duration, fs):
+    """Record audio from the microphone."""
+    print("Recording... Speak into the microphone.")
+    audio = sd.rec(int(duration * fs), samplerate=fs, channels=1, dtype='float32')
+    sd.wait()
+    audio = audio.flatten()
+    return audio
+
+def detect_frequency(audio, fs):
+    """Detect dominant frequency using FFT."""
+    n = len(audio)
+    audio_fft = np.abs(fft.fft(audio))
+    freqs = np.fft.fftfreq(n, 1/fs)
+    
+    # Consider only positive frequencies
+    positive_freqs = freqs[:n//2]
+    positive_fft = audio_fft[:n//2]
+    positive_fft[positive_fft < threshold] = 0    
+    peak_idx = np.argmax(positive_fft)
+    peak_freq = positive_freqs[peak_idx]    
+    return peak_freq, positive_freqs, positive_fft
+
+def plot_spectrum(freqs, fft_vals, peak_freq):
+    """Plot frequency spectrum."""
+    plt.plot(freqs, fft_vals)
+    plt.title(f"Detected Frequency: {peak_freq:.2f} Hz")
+    plt.xlabel("Frequency (Hz)")
+    plt.ylabel("Amplitude")
+    plt.grid(True)
+    plt.show()
+
+audio_data = record_audio(duration, fs)
+peak_freq, freqs, fft_vals = detect_frequency(audio_data, fs)
+
+# Check 
+if peak_freq > 20 and peak_freq < 3000:
+    print(f"Detected frequency: {peak_freq:.2f} Hz")
+    plot_spectrum(freqs, fft_vals, peak_freq)
+else:
+    print("No significant speech detected. Try speaking louder or closer to the microphone.")
