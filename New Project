@@ -1,0 +1,66 @@
+**This code generates, visualizes, analyzes (via FFT), and plays a high-frequency sound wave along with its harmonics, simulating vibrating string behavior.**
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Define sound wave parameters
+frequency = 200000
+duration = 0.01  
+sample_rate = 44100
+# Time
+t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
+# Generate sine wave
+wave = np.sin(2 * np.pi * frequency * t)
+# Plot the wave
+plt.figure(figsize=(8,4))
+plt.plot(t, wave)
+plt.xlabel("Time (s)")
+plt.ylabel("Amplitude")
+plt.title(f"Pure Sine Wave - {frequency} Hz")
+plt.grid()
+plt.show()
+
+# Simulate harmonics on a string
+L = 1  
+x = np.linspace(0, L, 1000)
+harmonics = [1, 2, 3]  # First three harmonics
+plt.figure(figsize=(8,5))
+for n in harmonics:
+    y = np.sin(n * np.pi * x / L)  
+    plt.plot(x, y, label=f"Harmonic {n}")
+
+plt.xlabel("Position on String")
+plt.ylabel("Amplitude")
+plt.title("Vibrating String Harmonics")
+plt.legend()
+plt.grid()
+plt.show()
+
+from scipy.fft import fft, fftfreq
+
+# Compute Fourier Transform
+N = len(t)  
+yf = fft(wave)  
+xf = fftfreq(N, 1/sample_rate)  # Frequency axis
+
+# Plot FFT magnitude spectrum
+plt.figure(figsize=(8,4))
+plt.plot(xf[:N//2], np.abs(yf[:N//2]))
+plt.xlabel("Frequency (Hz)")
+plt.ylabel("Magnitude")
+plt.title("Fourier Transform of Sound Wave")
+plt.grid()
+plt.show()
+
+import sounddevice as sd
+
+def generate_note(frequency, duration=1, sample_rate=44100):
+    t = np.linspace(0, duration, int(sample_rate * duration), False)
+    wave = 0.5 * np.sin(2 * np.pi * frequency * t)  
+    for n in range(2, 6):  # Adding harmonics
+        wave += (0.5/n) * np.sin(2 * np.pi * n * frequency * t)
+    return wave
+note = generate_note(frequency, duration=2)
+sd.play(note, 44100)  
+
+
